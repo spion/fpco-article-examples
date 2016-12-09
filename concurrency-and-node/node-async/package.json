@@ -14,7 +14,9 @@
   "dependencies": {
     "async": "^2.1.2",
     "express": "^4.14.0",
+    "least-latency-balancer": "^3.5.0",
     "promise-async": "^0.2.0",
+    "recluster": "^0.4.5",
     "request": "^2.76.0",
     "request-promise": "^4.1.1"
   }

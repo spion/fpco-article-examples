@@ -1,35 +1,27 @@
-var express = require('express');
-var app = express();
+var recluster = require('recluster'),
+    path = require('path'),
+    llb = require('least-latency-balancer')
 
-app.get('/', function(req, res) {
-    res.send('Use either the /fast or /slow route.');
+var cluster = recluster(path.join(__dirname, 'server.js'), {
+  readyWhen: 'ready'
 });
 
-app.get('/fast/:n', function(req, res) {
-    var n = req.params.n;
-    var r = n * n;
+cluster.run();
 
-    res.status(200).send('' + r);
+process.on('SIGUSR2', function() {
+    console.log('Got SIGUSR2, reloading cluster...');
+    cluster.reload();
 });
 
-app.get('/slow/:n', function(req, res) {
-    var n = req.params.n;
-    var r = getFibs(parseInt(n));
+console.log("spawned cluster, kill -s SIGUSR2", process.pid, "to reload");
 
-    res.status(200).send('' + r);
+// Added for the llb:
+
+var balancer = llb.createBalancer({
+  activeWorkers: cluster.activeWorkers
 });
 
-function getFibs(n) {
-    if (n < 1) {
-        throw 'Fib number is less than 1.';
-    } else if (n == 1) {
-        return 1;
-    } else if (n == 2) {
-        return 1;
-    } else {
-        return getFibs(n - 1) + getFibs(n - 2);
-    }
-}
+balancer.listen(8082, function() {
+  console.log("Least latency balancer listening on port", 8082);
+});
 
-console.log('Node Starvation Server Running');
-app.listen(8082);
